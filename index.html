@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="旅行清單">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
@@ -12,116 +13,322 @@
 <style>
 :root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#2563eb}
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+html,body{min-height:100%}
+body{
+  margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
+  background:var(--bg);color:var(--text);
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)
+}
 .app{max-width:760px;margin:auto;padding:16px 14px 120px}
-.top{position:sticky;top:0;z-index:20;background:rgba(245,247,251,.94);backdrop-filter:blur(12px);padding:10px 0 12px}
-h1{font-size:26px;margin:0 0 5px}.sub{font-size:14px;color:var(--muted)}
+.top{
+  position:sticky;top:0;z-index:20;background:rgba(245,247,251,.94);
+  backdrop-filter:blur(12px);padding:10px 0 12px
+}
+h1{font-size:26px;margin:0 0 5px}
+.sub{font-size:14px;color:var(--muted)}
 .hint{font-size:12px;color:var(--muted);margin-top:7px}
 .progressWrap{height:10px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:14px}
-.progress{height:100%;background:var(--accent);width:0}.progressText{font-size:13px;color:var(--muted);margin-top:6px}
+.progress{height:100%;background:var(--accent);width:0}
+.progressText{font-size:13px;color:var(--muted);margin-top:6px}
 .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-button,input{font:inherit} button{border:0;border-radius:12px;padding:11px 12px;background:#111827;color:#fff;font-weight:700}
+button,input{font:inherit}
+button{border:0;border-radius:12px;padding:11px 12px;background:#111827;color:#fff;font-weight:700}
 button.secondary{background:#fff;color:#111827;border:1px solid var(--line)}
 .category{background:var(--card);border-radius:18px;margin:12px 0;box-shadow:0 2px 12px rgba(0,0,0,.04);overflow:hidden}
 .catHead{display:flex;align-items:center;gap:8px;padding:14px;border-bottom:1px solid var(--line)}
-.catTitle{font-size:18px;font-weight:800;flex:1}.count{font-size:12px;color:var(--muted);background:#f3f4f6;padding:4px 8px;border-radius:999px}
-.items{padding:4px 10px}.item{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid #f1f5f9}.item:last-child{border-bottom:0}
-.item input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}.itemName{flex:1;font-size:16px}.done .itemName{text-decoration:line-through;color:#9ca3af}
-.mini{background:transparent;color:#6b7280;padding:6px 7px}
-.drag{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:20px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
-.addRow{display:flex;gap:8px;padding:10px}.addRow input,.modal input{flex:1;border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff;color:var(--text)}
+.catTitle{font-size:18px;font-weight:800;flex:1}
+.count{font-size:12px;color:var(--muted);background:#f3f4f6;padding:4px 8px;border-radius:999px}
+.items{padding:4px 10px}
+.item{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid #f1f5f9}
+.item:last-child{border-bottom:0}
+.item input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:0 0 auto}
+.itemName{flex:1;font-size:16px}
+.item.done .itemName{text-decoration:line-through;color:#9ca3af}
+.mini{background:transparent;color:#6b7280;padding:6px 7px;font-weight:600}
+.drag{
+  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  color:#9ca3af;font-size:22px;flex:0 0 auto;border-radius:10px;
+  touch-action:none;
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;
+  user-select:none;
+  cursor:grab;
+}
+.drag.active{background:rgba(37,99,235,.11);color:var(--accent)}
+.addRow{display:flex;gap:8px;padding:10px}
+.addRow input,.modal input{flex:1;border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff;color:var(--text)}
 .empty{background:var(--card);border:1px dashed var(--line);border-radius:18px;padding:34px 20px;text-align:center;color:var(--muted);margin-top:18px}
-.floating{position:fixed;right:18px;bottom:calc(22px + env(safe-area-inset-bottom));background:var(--accent);border-radius:999px;padding:14px 18px}
-dialog{border:0;border-radius:18px;padding:0;width:min(92vw,420px)}.modal{padding:18px}.modalActions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.floating{position:fixed;right:18px;bottom:calc(22px + env(safe-area-inset-bottom));background:var(--accent);border-radius:999px;padding:14px 18px;box-shadow:0 8px 24px rgba(37,99,235,.3)}
+dialog{border:0;border-radius:18px;padding:0;width:min(92vw,420px);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.modal{padding:18px}.modalActions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 .ph{border:2px dashed var(--accent);border-radius:14px;background:rgba(37,99,235,.07);margin:8px 0}
-.dragging{opacity:.92;box-shadow:0 14px 36px rgba(0,0,0,.22)!important;z-index:9999}
+.dragging{opacity:.94;box-shadow:0 16px 42px rgba(0,0,0,.25)!important;z-index:99999;transform:scale(1.01)}
 @media (prefers-color-scheme:dark){
-:root{--bg:#0b1220;--card:#111827;--text:#f9fafb;--muted:#9ca3af;--line:#263244}.top{background:rgba(11,18,32,.94)}button.secondary,.addRow input,.modal input{background:#111827;color:#fff}.count{background:#1f2937}
+:root{--bg:#0b1220;--card:#111827;--text:#f9fafb;--muted:#9ca3af;--line:#263244}
+.top{background:rgba(11,18,32,.94)}
+button.secondary,.addRow input,.modal input{background:#111827;color:#fff}
+.count{background:#1f2937}.item{border-bottom-color:#1f2937}
 }
 </style>
 </head>
 <body>
 <div class="app">
-<div class="top">
-<h1>✈️ 自訂出國攜帶清單</h1>
-<div class="sub">分類與物品都可自由新增、刪除、改名與排序</div>
-<div class="progressWrap"><div class="progress" id="progress"></div></div>
-<div class="progressText" id="progressText"></div>
-<div class="hint">長按 ☰ 約 0.4 秒後拖曳，即可調整順序。</div>
-<div class="toolbar"><button class="secondary" onclick="uncheckAll()">全部取消勾選</button><button class="secondary" onclick="clearAll()">清空全部</button></div>
+  <div class="top">
+    <h1>✈️ 自訂出國攜帶清單</h1>
+    <div class="sub">分類與物品都可自由新增、刪除、改名與排序</div>
+    <div class="progressWrap"><div class="progress" id="progress"></div></div>
+    <div class="progressText" id="progressText"></div>
+    <div class="hint">iPhone：直接按住 ☰ 上下拖曳。其他位置仍可正常滑動畫面。</div>
+    <div class="toolbar">
+      <button class="secondary" onclick="uncheckAll()">全部取消勾選</button>
+      <button class="secondary" onclick="clearAll()">清空全部</button>
+    </div>
+  </div>
+  <div id="categories"></div>
+  <button class="floating" onclick="openCategoryDialog()">＋ 新增分類</button>
 </div>
-<div id="categories"></div>
-<button class="floating" onclick="openCategoryDialog()">＋ 新增分類</button>
+
+<dialog id="categoryDialog">
+<div class="modal">
+<h2>新增分類</h2>
+<input id="categoryName" placeholder="例如：證件、衣物、攝影器材">
+<div class="modalActions">
+<button class="secondary" onclick="categoryDialog.close()">取消</button>
+<button onclick="addCategory()">新增</button>
 </div>
-<dialog id="categoryDialog"><div class="modal"><h2>新增分類</h2><input id="categoryName" placeholder="例如：證件、衣物、攝影器材"><div class="modalActions"><button class="secondary" onclick="categoryDialog.close()">取消</button><button onclick="addCategory()">新增</button></div></div></dialog>
+</div>
+</dialog>
+
 <script>
-const KEY='travel_checklist_custom_pwa_v3';
+const KEY='travel_checklist_custom_pwa_v5';
 let data=JSON.parse(localStorage.getItem(KEY)||'null');
 if(!data){
-  const old=localStorage.getItem('travel_checklist_custom_pwa_v2')||localStorage.getItem('travel_checklist_custom_pwa_v1');
-  data=old?JSON.parse(old):[];
+  const keys=[
+    'travel_checklist_custom_pwa_v4',
+    'travel_checklist_custom_pwa_v3',
+    'travel_checklist_custom_pwa_v2',
+    'travel_checklist_custom_pwa_v1'
+  ];
+  for(const k of keys){
+    const v=localStorage.getItem(k);
+    if(v){data=JSON.parse(v);break;}
+  }
 }
+if(!data)data=[];
+
 function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
 function saveOnly(){localStorage.setItem(KEY,JSON.stringify(data))}
 function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
 function render(){
- const root=document.getElementById('categories');root.innerHTML='';
- if(!data.length) root.innerHTML='<div class="empty">目前還沒有任何分類，點右下角新增分類。</div>';
- data.forEach((cat,ci)=>{
-   const done=cat.items.filter(x=>x.done).length;
-   const el=document.createElement('section');el.className='category';el.dataset.ci=ci;
-   el.innerHTML=`<div class="catHead"><div class="drag catDrag">☰</div><div class="catTitle">${esc(cat.name)}</div><div class="count">${done}/${cat.items.length}</div><button class="mini" onclick="renameCategory(${ci})">改名</button><button class="mini" onclick="deleteCategory(${ci})">刪除</button></div>
-   <div class="items" data-ci="${ci}">${cat.items.map((it,ii)=>`<div class="item ${it.done?'done':''}" data-ii="${ii}"><div class="drag itemDrag">☰</div><input type="checkbox" ${it.done?'checked':''} onchange="toggleItem(${ci},${ii})"><div class="itemName">${esc(it.name)}</div><button class="mini" onclick="renameItem(${ci},${ii})">編輯</button><button class="mini" onclick="deleteItem(${ci},${ii})">×</button></div>`).join('')}</div>
-   <div class="addRow"><input id="new-${ci}" placeholder="新增物品…" onkeydown="if(event.key==='Enter')addItem(${ci})"><button onclick="addItem(${ci})">新增</button></div>`;
-   root.appendChild(el);
- });
- const total=data.reduce((n,c)=>n+c.items.length,0),done=data.reduce((n,c)=>n+c.items.filter(i=>i.done).length,0),pct=total?Math.round(done/total*100):0;
- progress.style.width=pct+'%';progressText.textContent=`${done} / ${total} 已完成（${pct}%）`;
- bindSorting();
+  const root=document.getElementById('categories');
+  root.innerHTML='';
+  if(!data.length)root.innerHTML='<div class="empty">目前還沒有任何分類，點右下角「＋ 新增分類」開始建立清單。</div>';
+
+  data.forEach((cat,ci)=>{
+    const done=cat.items.filter(x=>x.done).length;
+    const el=document.createElement('section');
+    el.className='category';
+    el.dataset.ci=ci;
+    el.innerHTML=`
+      <div class="catHead">
+        <div class="drag catDrag" aria-label="拖曳分類">☰</div>
+        <div class="catTitle">${esc(cat.name)}</div>
+        <div class="count">${done}/${cat.items.length}</div>
+        <button class="mini" onclick="renameCategory(${ci})">改名</button>
+        <button class="mini" onclick="deleteCategory(${ci})">刪除</button>
+      </div>
+      <div class="items" data-ci="${ci}">
+        ${cat.items.map((it,ii)=>`
+          <div class="item ${it.done?'done':''}" data-ii="${ii}">
+            <div class="drag itemDrag" aria-label="拖曳物品">☰</div>
+            <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem(${ci},${ii})">
+            <div class="itemName">${esc(it.name)}</div>
+            <button class="mini" onclick="renameItem(${ci},${ii})">編輯</button>
+            <button class="mini" onclick="deleteItem(${ci},${ii})">×</button>
+          </div>`).join('')}
+      </div>
+      <div class="addRow">
+        <input id="new-${ci}" placeholder="新增物品…" onkeydown="if(event.key==='Enter')addItem(${ci})">
+        <button onclick="addItem(${ci})">新增</button>
+      </div>`;
+    root.appendChild(el);
+  });
+
+  const total=data.reduce((n,c)=>n+c.items.length,0);
+  const done=data.reduce((n,c)=>n+c.items.filter(i=>i.done).length,0);
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('progress').style.width=pct+'%';
+  document.getElementById('progressText').textContent=`${done} / ${total} 已完成（${pct}%）`;
+  bindDragHandles();
 }
+
 function openCategoryDialog(){categoryName.value='';categoryDialog.showModal()}
 function addCategory(){const n=categoryName.value.trim();if(!n)return;data.push({name:n,items:[]});categoryDialog.close();save()}
 function renameCategory(ci){const n=prompt('修改分類名稱：',data[ci].name);if(n&&n.trim()){data[ci].name=n.trim();save()}}
-function deleteCategory(ci){if(confirm(`確定刪除「${data[ci].name}」？`)){data.splice(ci,1);save()}}
-function addItem(ci){const i=document.getElementById('new-'+ci),n=i.value.trim();if(!n)return;data[ci].items.push({name:n,done:false});save()}
+function deleteCategory(ci){if(confirm(`確定刪除「${data[ci].name}」與其中所有物品？`)){data.splice(ci,1);save()}}
+function addItem(ci){const i=document.getElementById('new-'+ci),n=i.value.trim();if(!n)return;data[ci].items.push({name:n,done:false});i.value='';save()}
 function toggleItem(ci,ii){data[ci].items[ii].done=!data[ci].items[ii].done;save()}
 function renameItem(ci,ii){const n=prompt('修改物品名稱：',data[ci].items[ii].name);if(n&&n.trim()){data[ci].items[ii].name=n.trim();save()}}
 function deleteItem(ci,ii){if(confirm('刪除這個物品？')){data[ci].items.splice(ii,1);save()}}
 function uncheckAll(){if(confirm('確定取消所有勾選？')){data.forEach(c=>c.items.forEach(i=>i.done=false));save()}}
 function clearAll(){if(confirm('確定清空全部分類與物品？')){data=[];save()}}
-function bindSorting(){
- document.querySelectorAll('.catDrag').forEach(h=>bindDrag(h,'cat'));
- document.querySelectorAll('.itemDrag').forEach(h=>bindDrag(h,'item'));
+
+let dragState=null;
+
+function bindDragHandles(){
+  document.querySelectorAll('.catDrag').forEach(h=>bindHandle(h,'cat'));
+  document.querySelectorAll('.itemDrag').forEach(h=>bindHandle(h,'item'));
 }
-function bindDrag(handle,type){
- let timer,active=false,dragged,ph,offsetX,offsetY,startX,startY,catIndex=-1;
- handle.onpointerdown=e=>{
-  if(e.button!==undefined&&e.button!==0)return; startX=e.clientX;startY=e.clientY;
+
+function beginDrag(handle,type,x,y){
   const node=type==='cat'?handle.closest('.category'):handle.closest('.item');
-  timer=setTimeout(()=>{
-   active=true;dragged=node;if(type==='item')catIndex=+dragged.closest('.items').dataset.ci;
-   const r=dragged.getBoundingClientRect();offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;
-   ph=document.createElement('div');ph.className='ph';ph.style.height=r.height+'px';dragged.parentElement.insertBefore(ph,dragged.nextSibling);
-   dragged.classList.add('dragging');Object.assign(dragged.style,{position:'fixed',width:r.width+'px',left:r.left+'px',top:r.top+'px',margin:'0',pointerEvents:'none'});document.body.appendChild(dragged);
-  },400);
- };
- handle.onpointermove=e=>{
-  if(!active){if(Math.hypot(e.clientX-startX,e.clientY-startY)>10){clearTimeout(timer)}return}
-  e.preventDefault();dragged.style.left=(e.clientX-offsetX)+'px';dragged.style.top=(e.clientY-offsetY)+'px';
-  const t=document.elementFromPoint(e.clientX,e.clientY);if(!t)return;
-  if(type==='cat'){const c=t.closest('.category');if(c&&c!==dragged){const r=c.getBoundingClientRect(),root=categories;root.insertBefore(ph,e.clientY<r.top+r.height/2?c:c.nextSibling)}}
-  else{const it=t.closest('.item'),items=t.closest('.items');if(it&&items&&+items.dataset.ci===catIndex){const r=it.getBoundingClientRect();items.insertBefore(ph,e.clientY<r.top+r.height/2?it:it.nextSibling)}}
-  if(e.clientY<80)window.scrollBy(0,-10);else if(e.clientY>innerHeight-80)window.scrollBy(0,10);
- };
- const finish=()=>{
-  clearTimeout(timer);if(!active)return;active=false;
-  if(type==='cat'){categories.insertBefore(dragged,ph);const old=[...data];data=[...categories.querySelectorAll(':scope>.category')].map(el=>old[+el.dataset.ci])}
-  else{const items=ph.parentElement;items.insertBefore(dragged,ph);const old=[...data[catIndex].items];data[catIndex].items=[...items.querySelectorAll(':scope>.item')].map(el=>old[+el.dataset.ii])}
-  ph.remove();dragged.classList.remove('dragging');dragged.removeAttribute('style');saveOnly();render();
- };
- handle.onpointerup=finish;handle.onpointercancel=finish;handle.oncontextmenu=e=>e.preventDefault();
+  const rect=node.getBoundingClientRect();
+
+  const ph=document.createElement('div');
+  ph.className='ph';
+  ph.style.height=rect.height+'px';
+  node.parentElement.insertBefore(ph,node.nextSibling);
+
+  let catIndex=-1;
+  if(type==='item')catIndex=+node.closest('.items').dataset.ci;
+
+  dragState={
+    type,handle,node,ph,catIndex,
+    offsetX:x-rect.left,
+    offsetY:y-rect.top
+  };
+
+  handle.classList.add('active');
+  node.classList.add('dragging');
+
+  Object.assign(node.style,{
+    position:'fixed',
+    width:rect.width+'px',
+    left:rect.left+'px',
+    top:rect.top+'px',
+    margin:'0',
+    pointerEvents:'none'
+  });
+
+  document.body.appendChild(node);
 }
+
+function moveDrag(x,y){
+  const s=dragState;
+  if(!s)return;
+
+  s.node.style.left=(x-s.offsetX)+'px';
+  s.node.style.top=(y-s.offsetY)+'px';
+
+  const target=document.elementFromPoint(x,y);
+  if(target){
+    if(s.type==='cat'){
+      const t=target.closest('.category');
+      if(t&&t!==s.node){
+        const r=t.getBoundingClientRect();
+        const root=document.getElementById('categories');
+        root.insertBefore(s.ph,y<r.top+r.height/2?t:t.nextSibling);
+      }
+    }else{
+      const t=target.closest('.item');
+      const items=target.closest('.items');
+      if(t&&items&&+items.dataset.ci===s.catIndex){
+        const r=t.getBoundingClientRect();
+        items.insertBefore(s.ph,y<r.top+r.height/2?t:t.nextSibling);
+      }
+    }
+  }
+
+  if(y<90)window.scrollBy(0,-9);
+  else if(y>window.innerHeight-90)window.scrollBy(0,9);
+}
+
+function endDrag(){
+  const s=dragState;
+  if(!s)return;
+
+  if(s.type==='cat'){
+    const root=document.getElementById('categories');
+    root.insertBefore(s.node,s.ph);
+    const old=[...data];
+    data=[...root.querySelectorAll(':scope > .category')].map(el=>old[+el.dataset.ci]);
+  }else{
+    const items=s.ph.parentElement;
+    items.insertBefore(s.node,s.ph);
+    const old=[...data[s.catIndex].items];
+    data[s.catIndex].items=[...items.querySelectorAll(':scope > .item')].map(el=>old[+el.dataset.ii]);
+  }
+
+  s.ph.remove();
+  s.node.classList.remove('dragging');
+  s.handle.classList.remove('active');
+  s.node.removeAttribute('style');
+  dragState=null;
+
+  saveOnly();
+  render();
+}
+
+function bindHandle(handle,type){
+  // iPhone / touch: immediate drag, no long press
+  handle.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1)return;
+    e.preventDefault();
+    const t=e.touches[0];
+    beginDrag(handle,type,t.clientX,t.clientY);
+  },{passive:false});
+
+  handle.addEventListener('touchmove',e=>{
+    if(!dragState||e.touches.length!==1)return;
+    e.preventDefault();
+    const t=e.touches[0];
+    moveDrag(t.clientX,t.clientY);
+  },{passive:false});
+
+  handle.addEventListener('touchend',e=>{
+    if(!dragState)return;
+    e.preventDefault();
+    endDrag();
+  },{passive:false});
+
+  handle.addEventListener('touchcancel',e=>{
+    if(!dragState)return;
+    e.preventDefault();
+    endDrag();
+  },{passive:false});
+
+  // desktop mouse
+  handle.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;
+    e.preventDefault();
+    beginDrag(handle,type,e.clientX,e.clientY);
+
+    const mm=ev=>{
+      if(dragState){
+        ev.preventDefault();
+        moveDrag(ev.clientX,ev.clientY);
+      }
+    };
+    const mu=()=>{
+      document.removeEventListener('mousemove',mm);
+      document.removeEventListener('mouseup',mu);
+      if(dragState)endDrag();
+    };
+
+    document.addEventListener('mousemove',mm,{passive:false});
+    document.addEventListener('mouseup',mu);
+  });
+
+  handle.addEventListener('contextmenu',e=>e.preventDefault());
+}
+
 render();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+
+if('serviceWorker'in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+}
 </script>
-</body></html>
+</body>
+</html>
