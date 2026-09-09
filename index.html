@@ -39,11 +39,18 @@ button.secondary{background:#fff;color:#111827;border:1px solid var(--line)}
 .catTitle{font-size:18px;font-weight:800;flex:1}
 .count{font-size:12px;color:var(--muted);background:#f3f4f6;padding:4px 8px;border-radius:999px}
 .items{padding:4px 10px}
-.item{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid #f1f5f9}
+.item{display:flex;align-items:flex-start;gap:10px;padding:12px 4px;border-bottom:1px solid #f1f5f9}
 .item:last-child{border-bottom:0}
-.item input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:0 0 auto}
-.itemName{flex:1;font-size:16px}
+.item input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:0 0 auto;margin-top:4px}
+.itemMain{flex:1;min-width:0}
+.itemName{font-size:16px;line-height:1.35;word-break:break-word}
 .item.done .itemName{text-decoration:line-through;color:#9ca3af}
+.itemMeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tagSelect{border:1px solid var(--line);background:#fff;color:var(--text);border-radius:999px;padding:6px 9px;font-size:13px;font-weight:700}
+.qtyWrap{display:flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+.qtyBtn{background:transparent;color:var(--text);padding:5px 10px;border-radius:0;font-size:16px;line-height:1}
+.qtyNum{min-width:34px;text-align:center;font-size:13px;font-weight:800}
+.actions{display:flex;flex-direction:column;gap:2px}
 .mini{background:transparent;color:#6b7280;padding:6px 7px;font-weight:600}
 .drag{
   width:38px;height:38px;display:flex;align-items:center;justify-content:center;
@@ -67,7 +74,7 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 @media (prefers-color-scheme:dark){
 :root{--bg:#0b1220;--card:#111827;--text:#f9fafb;--muted:#9ca3af;--line:#263244}
 .top{background:rgba(11,18,32,.94)}
-button.secondary,.addRow input,.modal input{background:#111827;color:#fff}
+button.secondary,.addRow input,.modal input,.tagSelect,.qtyWrap{background:#111827;color:#fff}
 .count{background:#1f2937}.item{border-bottom-color:#1f2937}
 }
 </style>
@@ -76,7 +83,7 @@ button.secondary,.addRow input,.modal input{background:#111827;color:#fff}
 <div class="app">
   <div class="top">
     <h1>✈️ 自訂出國攜帶清單</h1>
-    <div class="sub">分類與物品都可自由新增、刪除、改名與排序</div>
+    <div class="sub">分類、物品、數量與隨身／託運標籤都可自訂</div>
     <div class="progressWrap"><div class="progress" id="progress"></div></div>
     <div class="progressText" id="progressText"></div>
     <div class="hint">iPhone：直接按住 ☰ 上下拖曳。其他位置仍可正常滑動畫面。</div>
@@ -101,10 +108,12 @@ button.secondary,.addRow input,.modal input{background:#111827;color:#fff}
 </dialog>
 
 <script>
-const KEY='travel_checklist_custom_pwa_v5';
+const KEY='travel_checklist_custom_pwa_v6';
 let data=JSON.parse(localStorage.getItem(KEY)||'null');
 if(!data){
   const keys=[
+    'travel_checklist_original_restore',
+    'travel_checklist_custom_pwa_v5',
     'travel_checklist_custom_pwa_v4',
     'travel_checklist_custom_pwa_v3',
     'travel_checklist_custom_pwa_v2',
@@ -112,10 +121,17 @@ if(!data){
   ];
   for(const k of keys){
     const v=localStorage.getItem(k);
-    if(v){data=JSON.parse(v);break;}
+    if(v){try{data=JSON.parse(v);if(Array.isArray(data))break;}catch(e){}}
   }
 }
-if(!data)data=[];
+if(!Array.isArray(data))data=[];
+data.forEach(cat=>{
+  if(!Array.isArray(cat.items))cat.items=[];
+  cat.items.forEach(it=>{
+    if(typeof it.qty!=='number'||it.qty<1)it.qty=1;
+    if(!['none','carry','checked'].includes(it.bag))it.bag='none';
+  });
+});
 
 function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
 function saveOnly(){localStorage.setItem(KEY,JSON.stringify(data))}
@@ -144,9 +160,25 @@ function render(){
           <div class="item ${it.done?'done':''}" data-ii="${ii}">
             <div class="drag itemDrag" aria-label="拖曳物品">☰</div>
             <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem(${ci},${ii})">
-            <div class="itemName">${esc(it.name)}</div>
-            <button class="mini" onclick="renameItem(${ci},${ii})">編輯</button>
-            <button class="mini" onclick="deleteItem(${ci},${ii})">×</button>
+            <div class="itemMain">
+              <div class="itemName">${esc(it.name)}</div>
+              <div class="itemMeta">
+                <select class="tagSelect" onchange="setBag(${ci},${ii},this.value)">
+                  <option value="none" ${it.bag==='none'?'selected':''}>未設定</option>
+                  <option value="carry" ${it.bag==='carry'?'selected':''}>🎒 隨身</option>
+                  <option value="checked" ${it.bag==='checked'?'selected':''}>🧳 託運</option>
+                </select>
+                <div class="qtyWrap">
+                  <button class="qtyBtn" onclick="changeQty(${ci},${ii},-1)">−</button>
+                  <div class="qtyNum">× ${it.qty}</div>
+                  <button class="qtyBtn" onclick="changeQty(${ci},${ii},1)">＋</button>
+                </div>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="mini" onclick="renameItem(${ci},${ii})">編輯</button>
+              <button class="mini" onclick="deleteItem(${ci},${ii})">×</button>
+            </div>
           </div>`).join('')}
       </div>
       <div class="addRow">
@@ -168,8 +200,10 @@ function openCategoryDialog(){categoryName.value='';categoryDialog.showModal()}
 function addCategory(){const n=categoryName.value.trim();if(!n)return;data.push({name:n,items:[]});categoryDialog.close();save()}
 function renameCategory(ci){const n=prompt('修改分類名稱：',data[ci].name);if(n&&n.trim()){data[ci].name=n.trim();save()}}
 function deleteCategory(ci){if(confirm(`確定刪除「${data[ci].name}」與其中所有物品？`)){data.splice(ci,1);save()}}
-function addItem(ci){const i=document.getElementById('new-'+ci),n=i.value.trim();if(!n)return;data[ci].items.push({name:n,done:false});i.value='';save()}
+function addItem(ci){const i=document.getElementById('new-'+ci),n=i.value.trim();if(!n)return;data[ci].items.push({name:n,done:false,qty:1,bag:'none'});i.value='';save()}
 function toggleItem(ci,ii){data[ci].items[ii].done=!data[ci].items[ii].done;save()}
+function setBag(ci,ii,val){data[ci].items[ii].bag=val;saveOnly()}
+function changeQty(ci,ii,delta){const it=data[ci].items[ii];it.qty=Math.max(1,(it.qty||1)+delta);save()}
 function renameItem(ci,ii){const n=prompt('修改物品名稱：',data[ci].items[ii].name);if(n&&n.trim()){data[ci].items[ii].name=n.trim();save()}}
 function deleteItem(ci,ii){if(confirm('刪除這個物品？')){data[ci].items.splice(ii,1);save()}}
 function uncheckAll(){if(confirm('確定取消所有勾選？')){data.forEach(c=>c.items.forEach(i=>i.done=false));save()}}
